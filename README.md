@@ -1,0 +1,121 @@
+# dsh-forecast · 提示词预报
+
+[![Check](https://github.com/AAAholic/dsh-forecast/actions/workflows/check.yml/badge.svg)](https://github.com/AAAholic/dsh-forecast/actions/workflows/check.yml)
+
+给 DeepSeek Harness 的下一句话预报插件。助手完成一轮回复后，在空输入框中显示一条浅色候选；点击或按 **Tab** 填入，再由你编辑和发送。
+
+这是独立的社区插件，借鉴下一轮输入建议的交互，没有迁移 Codex 的私有代码或预测服务。
+
+## 使用
+
+输入框左下工具栏有一个小巧的胶囊开关，默认开启，直接点击切换。开启时滑块在右、浅蓝色底，空出的左侧显示 **预报**；关闭时滑块在左、浅灰色底，右侧显示 **关闭**。文字位于胶囊内部，无需进入设置页面。
+
+- 每个已完成的对话轮次最多尝试一次，最多显示一条、1–2 句话的短建议。没有明确有用的下一步时可以不显示。
+- 点击浅色建议，或在空输入框中按未带修饰键的 Tab，将文字填入草稿。采用后可以继续修改，必须由你自行发送。
+- 自己输入文字、添加附件或使用中文输入法时，建议会隐藏。清空草稿后显示同一条缓存建议；采用后再删除文字也不会重新调用模型。
+- 有输入法组合、菜单或弹窗，输入框已有内容或不可编辑时，不采用建议。没有可采用建议时，Tab 保持普通行为。
+- 切换会话、改变模型或任务模式、开始新一轮，以及关闭插件时，会使过期请求和建议失效。
+
+预报不会自动发送，不会创建新的聊天轮次，也不会执行工具或代替你批准操作。建议可能不准确，采用前请检查内容和任务边界。
+
+## 上下文、费用与延迟
+
+插件使用**当前会话**中近期的用户文字和可见助手回复，并从本会话此前的短用户提示中参考措辞、句式和简洁程度。风格样本不作为旧任务事实或授权使用；不读取其他会话或全局个人历史，也不读取本地文件、附件内容或屏幕来学习风格。
+
+开启后，符合条件的已完成轮次会通过当前选定的服务商和模型发出**额外的独立推理请求**。本次所选文本上下文会发送给该服务商，适用其数据处理规则和计费。插件复用 DSH 已配置的模型，不需要另外填写密钥；账户额度和模型可用性仍由服务商决定。
+
+目前限制为最近对话约 6,500 字符、风格样本约 2,000 字符，输出预算最多 512 tokens，建议最多 160 个字符，请求最长等待 20 秒。模型支持时选择较低的推理强度。实际耗时和费用取决于模型、服务商、缓存和网络，短输出也不意味着免费。
+
+一次尝试在调用前写入本地额度记录。失败、超时或取消后，同一轮不会自动重试；正常刷新或重启也不会再次调用该轮。读取状态和重新显示缓存不调用模型。关闭插件会中止在途请求并阻止后续调用，但无法撤回已产生的服务商费用。额度和开关按 profile 保存；desktop 与 web 等不同 profile 各自独立，不共享重复调用保护。
+
+## 本地审计与隐私
+
+插件独立保存一次预测的准确系统提示、所选对话上下文、请求参数、服务商/模型、结果，以及服务商实际返回的 usage 和结束原因；未返回的用量可能为空。记录不追加到主聊天事件和主模型历史。
+
+默认位置为：
+
+```text
+<DSH_HOME>/data/dsh-forecast/<profile-id>/ledger.json
+```
+
+未设置 `DSH_HOME` 时使用用户主目录中的 `.dsh`。macOS/Linux 上目录与文件分别使用 0700/0600 权限；Windows 上隐私由所在目录的账户 ACL 决定，POSIX 权限位不能替代 ACL，请将 `DSH_HOME` 保持在自己的用户目录内。记录原子写入；详细审计最多保留最近 80 次，并限制文件体积。每个会话的轮次额度记录单独保留，用于防止重复调用。
+
+**该文件包含会话文字，请勿上传到 GitHub、插件仓库或公开问题附件。** 插件不会主动将审计上传到第三方。删除或替换额度文件会破坏重复调用保护，可能导致相同轮次再次收费；无法读取或校验本地记录时，插件停止预测。
+
+## 兼容与安装
+
+本插件按 DSH 官方运行时 **0.2.0-rc.2** 的 bundle、模型调用和输入框接口实现，客户端用于 Web 界面及使用该界面的桌面壳。其他运行时版本需要重新核对接口。
+
+| 宿主 | 适配范围与验收状态 |
+| --- | --- |
+| Mac Apple Silicon 桌面 | 已完成真实客户端生成、开关、采用、编辑、清空、会话切换及重启验收 |
+| Mac Intel 桌面 | 官方存在 Intel 版本；使用同一 JS 插件，设置 Intel CI 检查，尚无 Intel 桌面实机验收 |
+| Windows x64 桌面 | 使用同一 JS 插件，设置 Windows CI 检查，尚无 Windows 桌面实机验收 |
+| Mac/Windows 的 `dsh web` | 同一 Web 客户端；Mac 上已真实启动并验证加载与开关，模型生成因 Web profile 缺少 API 凭据未完成；Windows Web 实机待验收 |
+| Linux 的 `dsh web` | 同一 Web 接口及 Linux CI 检查，尚无真实 Web 宿主验收 |
+
+CPU 架构不会改变预报交互，插件运行代码不包含 CPU 原生扩展。CI 验证构建与逻辑，不能代替各平台 DSH 原生窗口验收；最新结果见上方 Actions。[官方 rc.2 发布说明确认 Intel Mac 版本](https://github.com/deepseek-ai/deepseek-harness/releases/tag/dsh-v0.2.0-rc.2)。
+
+本次 CLI 适配指官方 `dsh web`，预报显示在它启动的浏览器输入框中。官方 `headless` 是一次任务结束后退出的模式，本插件不提供独立终端 TUI，也不接管 shell 的 Tab 补全。[官方 CLI 模式说明](https://github.com/deepseek-ai/deepseek-harness/blob/dsh-v0.2.0-rc.2/apps/cli/README.md)。
+
+包采用官方 bundle 机制：`package.json` 的 `dsh.bundle.patch` 指向 `cordis.patch.yml`，`dsh.client` 声明 Web 客户端。安装需要同时让宿主找到包，并在所用 profile 的 `dsh.profile.bundles` 中注册它。仅复制 `client.js` 不会完成安装。
+
+### 从源码构建
+
+在插件目录安装开发依赖后运行包内脚本：
+
+```sh
+npm run build
+npm test
+npm run check
+```
+
+`build` 生成 `lib/client.js`；`test` 运行策略、预算和客户端交互测试；`check` 检查客户端产物是否与源码一致。发布包包含 `lib/`、`cordis.patch.yml`、此说明和许可证。
+
+### 桌面 profile 的本地包注册
+
+先退出 DSH，并备份要修改的 profile 配置。默认桌面 profile 位于 `<DSH_HOME>/profiles/desktop`。
+
+1. 将已构建的插件包放到该 profile 的 `node_modules/dsh-forecast/`，确认其中有 `package.json`、`cordis.patch.yml` 和 `lib/`。正常依赖也必须可解析；宿主提供的模型接口由 DSH 自身的运行时解析器处理。
+2. 在 profile 的 `package.json` 中保留已有内容，追加本地包依赖和 bundle 名称。例如下列字段需要**合并**，不能用它们覆盖整个文件：
+
+   ```json
+   {
+     "dependencies": {
+       "dsh-forecast": "file:/absolute/path/to/dsh-forecast"
+     },
+     "dsh": {
+       "profile": {
+         "bundles": ["dsh-forecast"]
+       }
+     }
+   }
+   ```
+
+   将示例路径改为你的本地包路径；在已有 `bundles` 数组末尾添加一次 `dsh-forecast`，保留原有官方和第三方 bundle。
+3. 重新启动 DSH，在输入框左下确认出现“预报”开关。
+
+此安装说明使用本地包注册方式，不假设包已发布到 npm 或插件市场。宿主升级后如插件不加载，应先核对运行时兼容性和 bundle 注册。
+
+### 官方 CLI 的 Web profile
+
+在源码目录完成构建后执行 `npm pack`，得到 `dsh-forecast-0.1.0.tgz`。然后运行：
+
+```sh
+dsh plugin --profile web add "/absolute/path/to/dsh-forecast-0.1.0.tgz"
+dsh web
+```
+
+Windows PowerShell 中将第一行的路径替换为例如 `"C:\Users\you\Downloads\dsh-forecast-0.1.0.tgz"`；后续命令相同。官方插件管理命令安装依赖并自动登记 bundle。使用已构建 tarball 可避免目录软链接缺少依赖的问题。若系统找不到 `dsh`，可先通过 DSH 桌面应用的“管理 dsh 命令”安装官方命令入口，无需另装一套插件运行时。
+
+Web profile 与桌面 profile 分开安装和配置。请在 Web 的模型页面配置可用服务商及凭据，并使用 `dsh web` 输出的本机登录链接访问；桌面账号模型可用，不代表 Web profile 的 API 模型已有凭据。替换已安装文件后完整重启宿主，以加载新的客户端产物。
+
+实现取舍和对抗式审核记录见 [DESIGN.md](DESIGN.md)。
+
+## 问题反馈
+
+请提供 DSH 运行时版本、插件版本、复现步骤，以及是否切换会话/模型、是否处于输入法组合状态。提交日志或截图前移除会话文字、密钥、账户信息和本机路径；不要提交本地 `ledger.json`。
+
+## 许可证
+
+[MIT](LICENSE)。
