@@ -1,7 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { PredictionController, inputEmpty } from '../lib/client/controller.mjs'
-import { acceptCandidate, tabGesture } from '../lib/client/acceptance.mjs'
+import { acceptCandidate, adoptionUnchanged, retractCandidate, tabGesture } from '../lib/client/acceptance.mjs'
 import { SwitchSettingsForm } from '../lib/client/settings-model.mjs'
 import { predictionModeKey } from '../lib/client/mode.mjs'
 
@@ -195,6 +195,45 @@ test('only unmodified non-composing Tab can request adoption; Enter is never an 
   assert.equal(inputEmpty({ ...input(), attachmentIds: ['attachment'] }), false)
   assert.equal(inputEmpty({ ...input(), occurrences: ['reference'] }), false)
   assert.equal(inputEmpty({ ...input(), phase: 'submitting' }), false)
+})
+
+test('a second Tab retracts only the untouched adopted revision through a CAS range, without sending or predicting', () => {
+  const candidate = { text: '继续审核 🦈，先检查边界。' }
+  const controller = { candidateCurrent: value => value === candidate }
+  const adoption = { candidate, draftRev: 9 }
+  let snapshot = input(candidate.text, 9), removes = 0
+  const shell = { get snapshot() { return snapshot }, actions: {
+    insertText(text, span) {
+      assert.equal(text, ''); assert.deepEqual(span, { start: 0, end: candidate.text.length, draftRev: 9 })
+      removes++; snapshot = input('', 10); return true
+    },
+    setDraft() { assert.fail('Retraction must retain CAS') }, submit() { assert.fail('Retraction must never submit') },
+  } }
+  const args = { controller, adoption, shell, visible: true, composing: false, menuOpen: false, editable: true }
+  assert.equal(adoptionUnchanged({ controller, adoption, input: snapshot }), true)
+  assert.equal(retractCandidate(args), true)
+  assert.equal(snapshot.draft, ''); assert.equal(removes, 1)
+  assert.equal(retractCandidate(args), false)
+})
+
+test('edits, even changed back to the original text, attachments, references, stale contexts and IME block retraction', () => {
+  const candidate = { text: '先检查边界。' }, adoption = { candidate, draftRev: 9 }
+  let current = true, snapshot = input(candidate.text, 9)
+  const controller = { candidateCurrent: () => current }
+  const shell = { get snapshot() { return snapshot }, actions: { insertText() { assert.fail('User content must not be removed') } } }
+  const args = { controller, adoption, shell, visible: true, composing: false, menuOpen: false, editable: true }
+  for (const altered of [input('自己的文字', 10), input(candidate.text, 11),
+    { ...input(candidate.text, 9), attachmentIds: ['file'] }, { ...input(candidate.text, 9), occurrences: ['ref'] },
+    { ...input(candidate.text, 9), phase: 'submitting' }]) {
+    snapshot = altered; assert.equal(retractCandidate(args), false)
+  }
+  snapshot = input(candidate.text, 9)
+  for (const guard of [{ composing: true }, { menuOpen: true }, { editable: false }, { visible: false }]) {
+    assert.equal(retractCandidate({ ...args, ...guard }), false)
+  }
+  current = false; assert.equal(retractCandidate(args), false)
+  current = true; shell.actions.insertText = () => false
+  assert.equal(retractCandidate(args), false); assert.equal(snapshot.draft, candidate.text)
 })
 
 test('the single settings toggle persists immediately, blocks competing writes, and keeps snapshots stable', async () => {

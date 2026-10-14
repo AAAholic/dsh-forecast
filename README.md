@@ -2,7 +2,7 @@
 
 [![Check](https://github.com/AAAholic/dsh-forecast/actions/workflows/check.yml/badge.svg)](https://github.com/AAAholic/dsh-forecast/actions/workflows/check.yml)
 
-给 DeepSeek Harness 的下一句话预报插件。助手完成一轮回复后，在空输入框中显示一条浅色候选；点击或按 **Tab** 填入，再由你编辑和发送。
+给 DeepSeek Harness 的下一句话预报插件。助手完成一轮回复后，在空输入框中显示一条浅色候选；只按 **Tab** 采纳为草稿，再由你编辑和发送。未编辑时，再次按 Tab 可以撤回。
 
 这是独立的社区插件，借鉴下一轮输入建议的交互，没有迁移 Codex 的私有代码或预测服务。
 
@@ -11,7 +11,9 @@
 输入框左下工具栏有一个小巧的胶囊开关，默认开启，直接点击切换。开启时滑块在右、浅蓝色底，空出的左侧显示 **预报**；关闭时滑块在左、浅灰色底，右侧显示 **关闭**。文字位于胶囊内部，无需进入设置页面。
 
 - 每个已完成的对话轮次最多尝试一次，最多显示一条、1–2 句话的短建议。没有明确有用的下一步时可以不显示。
-- 点击浅色建议，或在空输入框中按未带修饰键的 Tab，将文字填入草稿。采用后可以继续修改，必须由你自行发送。
+- 点击输入框或浅色建议只聚焦输入框，方便激活窗口后直接编辑，不会采纳。只有在空输入框中按未带修饰键的 Tab 才将预报填入草稿。
+- 采纳后尚未编辑时，再次按 Tab 清空刚采纳的文字，并恢复同一条灰色预报；继续按 Tab 可以再次采纳。撤回不调用模型，也不会发送。
+- 只要改过文字、添加附件或引用、切换会话或改变任务状态，快捷撤回就失效，即使文字后来改回原样也不会删除你的草稿。采用后可以继续修改，必须由你自行发送。
 - 自己输入文字、添加附件或使用中文输入法时，建议会隐藏。清空草稿后显示同一条缓存建议；采用后再删除文字也不会重新调用模型。
 - 有输入法组合、菜单或弹窗，输入框已有内容或不可编辑时，不采用建议。没有可采用建议时，Tab 保持普通行为。
 - 切换会话、改变模型或任务模式、开始新一轮，以及关闭插件时，会使过期请求和建议失效。
@@ -99,14 +101,14 @@ npm run check
 
 ### 官方 CLI 的 Web profile
 
-在源码目录完成构建后执行 `npm pack`，得到 `dsh-forecast-0.1.0.tgz`。然后运行：
+在源码目录完成构建后执行 `npm pack`，得到 `dsh-forecast-0.1.1.tgz`。然后运行：
 
 ```sh
-dsh plugin --profile web add "/absolute/path/to/dsh-forecast-0.1.0.tgz"
+dsh plugin --profile web add "/absolute/path/to/dsh-forecast-0.1.1.tgz"
 dsh web
 ```
 
-Windows PowerShell 中将第一行的路径替换为例如 `"C:\Users\you\Downloads\dsh-forecast-0.1.0.tgz"`；后续命令相同。官方插件管理命令安装依赖并自动登记 bundle。使用已构建 tarball 可避免目录软链接缺少依赖的问题。若系统找不到 `dsh`，可先通过 DSH 桌面应用的“管理 dsh 命令”安装官方命令入口，无需另装一套插件运行时。
+Windows PowerShell 中将第一行的路径替换为例如 `"C:\Users\you\Downloads\dsh-forecast-0.1.1.tgz"`；后续命令相同。官方插件管理命令安装依赖并自动登记 bundle。使用已构建 tarball 可避免目录软链接缺少依赖的问题。若系统找不到 `dsh`，可先通过 DSH 桌面应用的“管理 dsh 命令”安装官方命令入口，无需另装一套插件运行时。
 
 Web profile 与桌面 profile 分开安装和配置。请在 Web 的模型页面配置可用服务商及凭据，并使用 `dsh web` 输出的本机登录链接访问；桌面账号模型可用，不代表 Web profile 的 API 模型已有凭据。替换已安装文件后完整重启宿主，以加载新的客户端产物。
 

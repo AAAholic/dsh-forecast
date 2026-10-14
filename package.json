@@ -1,6 +1,6 @@
 {
   "name": "dsh-forecast",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "module",
   "description": "Short next-message ghost suggestions for DeepSeek Harness, with explicit editable draft adoption.",
   "repository": {"type": "git", "url": "https://github.com/AAAholic/dsh-forecast.git"},
