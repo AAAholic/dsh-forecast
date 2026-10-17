@@ -19,6 +19,7 @@ async function fixture(t) {
   return join(dir, 'ledger.json')
 }
 const take = (path, token = 'test-owner') => acquireLedgerLease(path, token, { waitMs: 60 })
+const canonicalCase = path => process.platform === 'win32' ? path.toLowerCase() : path
 const options = path => ({ ledgerPath: path, ownerWaitMs: 60,
   getContext: () => ({ key: 'turn-12', turnSeq: 12, route: { provider: 'mock', model: 'mock' } }),
   buildPrompt: () => ({ system: '', input: '' }), normalizeSuggestion: () => null,
@@ -95,7 +96,7 @@ test('same-process remount waits for orderly predecessor disposal', async t => {
 test('an occupied derived port fails closed rather than choosing another lock', async t => {
   const path = await fixture(t), identity = join(await realpath(join(path, '..')), 'ledger.json')
   const blocker = createServer(socket => socket.destroy())
-  blocker.listen({ host: '127.0.0.1', port: leasePort(identity), exclusive: true })
+  blocker.listen({ host: '127.0.0.1', port: leasePort(canonicalCase(identity)), exclusive: true })
   await once(blocker, 'listening')
   try { await assert.rejects(take(path), { code: 'EADDRINUSE' }) }
   finally { await new Promise(resolve => blocker.close(resolve)) }
@@ -105,11 +106,11 @@ test('an occupied derived port fails closed rather than choosing another lock', 
 test('two different ledger paths with the same hash port remain mutually exclusive', async t => {
   const path = await fixture(t), root = await realpath(join(path, '..'))
   const firstPath = join(root, 'first', 'ledger.json')
-  const port = leasePort(firstPath)
+  const port = leasePort(canonicalCase(firstPath))
   let collision
   for (let i = 0; i < 200000; i++) {
     const candidate = join(root, `candidate-${i}`, 'ledger.json')
-    if (leasePort(candidate) === port) { collision = candidate; break }
+    if (leasePort(canonicalCase(candidate)) === port) { collision = candidate; break }
   }
   assert.ok(collision, 'find a deterministic hash collision')
   const first = await take(firstPath)
@@ -130,10 +131,12 @@ test('lease socket immediately closes connections without a protocol or response
   const path = await fixture(t), lease = await take(path)
   try {
     const socket = createConnection({ host: '127.0.0.1', port: lease.port })
-    let bytes = 0
+    let bytes = 0, socketError = null
     socket.on('data', chunk => { bytes += chunk.length })
-    socket.on('error', error => { assert.equal(error.code, 'ECONNRESET') })
-    await once(socket, 'close'); assert.equal(bytes, 0)
+    socket.on('error', error => { socketError = error })
+    await new Promise(resolve => socket.once('close', resolve))
+    if (socketError) assert.equal(socketError.code, 'ECONNRESET')
+    assert.equal(bytes, 0)
   } finally { await lease.release() }
 })
 
