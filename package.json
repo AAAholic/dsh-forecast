@@ -1,18 +1,19 @@
 {
   "name": "dsh-forecast",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "type": "module",
   "description": "Short next-message ghost suggestions for DeepSeek Harness, with explicit editable draft adoption.",
   "repository": {"type": "git", "url": "https://github.com/AAAholic/dsh-forecast.git"},
   "homepage": "https://github.com/AAAholic/dsh-forecast#readme",
   "main": "lib/index.mjs",
   "exports": {".": "./lib/index.mjs", "./client": "./lib/client.js", "./cordis.patch.yml": "./cordis.patch.yml", "./package.json": "./package.json"},
-  "files": ["lib", "cordis.patch.yml", "README.md", "DESIGN.md", "LICENSE"],
+  "files": ["lib", "cordis.patch.yml", "README.md", "DESIGN.md", "CHANGELOG.md", "LICENSE"],
+  "engines": {"dsh": ">=0.2.1-rc.2 <0.2.2-0"},
   "dsh": {"bundle": {"patch": "./cordis.patch.yml"}, "client": {"platform": "web"}},
   "scripts": {"build": "node scripts/build.mjs", "check": "node scripts/build.mjs --check", "test": "node --test tests/*.test.mjs"},
   "dependencies": {"@deepseek-ai/schemastery": "3.18.4"},
   "devDependencies": {"esbuild": "0.28.1"},
-  "peerDependencies": {"@deepseek-ai/dsh-llm": ">=0.2.0-rc.2", "react": "^18.3.1", "react-dom": "^18.3.1"},
+  "peerDependencies": {"@deepseek-ai/dsh-llm": ">=0.2.1-rc.2 <0.2.2-0", "react": "^18.3.1", "react-dom": "^18.3.1"},
   "peerDependenciesMeta": {"@deepseek-ai/dsh-llm": {"optional": true}, "react": {"optional": true}, "react-dom": {"optional": true}},
   "license": "MIT"
 }

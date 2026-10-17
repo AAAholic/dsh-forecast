@@ -26,6 +26,20 @@ test('Single short editable candidate or null; verbose/malformed/assistant outpu
 test('A read-only latest request cannot become an installation instruction',()=>{
   const context=getContext(fixture());assert.equal(normalizeSuggestion('{"suggestion":"按这个方案开始安装插件。"}',context),null);assert.ok(normalizeSuggestion('{"suggestion":"继续调研取消和草稿覆盖问题。"}',context))
 })
+test('A negative action never exempts a different positive action or double negative',()=>{
+  const context=getContext(fixture())
+  for(const suggestion of ['不要删除文件，直接安装插件。','不修改配置并部署到线上。','不要不安装插件。','不是不安装，现在实施。','直接移除旧插件。','继续调研，随后写入配置。','Do not delete files; install the plugin.','Install the plugin now.','Ｉｎｓｔａｌｌ the plugin now.','删\u200b除旧插件。']) {
+    assert.equal(normalizeSuggestion(JSON.stringify({suggestion}),context),null,suggestion)
+  }
+  for(const suggestion of ['先不要安装，继续只读核对接口。','不要删除文件，继续分析风险。','Do not install; keep reviewing.','继续比较接口和取消行为。']) {
+    assert.equal(normalizeSuggestion(JSON.stringify({suggestion}),context),suggestion,suggestion)
+  }
+})
+test('English read-only requests retain the same output boundary',()=>{
+  const context=getContext(fixture({messages:[message('user','Read-only review, do not install anything.'),message('assistant','The interfaces are available.')]}))
+  assert.equal(context.readOnly,true)
+  assert.equal(normalizeSuggestion('{"suggestion":"Deploy the update now."}',context),null)
+})
 test('Read-only metadata does not create a different generation key',()=>{
   const a=getContext(fixture()),b=getContext(fixture({events:[{type:'session/title',seq:11}]}));assert.equal(a.key,b.key)
 })
@@ -37,6 +51,23 @@ test('Many assistant fragments cannot evict the latest user or ongoing read-only
 })
 test('Explicit new implementation request supersedes the earlier read-only phase',()=>{
   const context=getContext(fixture({messages:[message('user','先调研不施工。'),message('assistant','方案'),message('user','那就按这个方案做预测插件。'),message('assistant','已实现')]}));assert.equal(context.readOnly,false)
+})
+test('Negated implementation or authorization cannot silently clear an earlier read-only phase',()=>{
+  for(const latest of ['现在不要实施，先复核风险。','不是让你现在开始实现，继续分析。','不要授权修改，先给结论。','现在不用安装插件。','没有同意你直接施工。']) {
+    const context=getContext(fixture({messages:[message('user','先只读调研。'),message('assistant','方案'),message('user',latest),message('assistant','继续分析')]}))
+    assert.equal(context.readOnly,true,latest)
+    assert.equal(normalizeSuggestion('{"suggestion":"直接部署更新。"}',context),null,latest)
+  }
+})
+test('an older read-only boundary survives more than sixteen later user clarifications',()=>{
+  const messages=[message('user','全程只读，不施工。'),message('assistant','开始审核'),
+    ...Array.from({length:20},()=>[message('user','继续分析风险。'),message('assistant','当前分析')]).flat()]
+  const context=getContext(fixture({messages}))
+  assert.equal(context.readOnly,true)
+  assert.ok(context.constraints.some(text=>text.includes('全程只读')))
+  assert.equal(normalizeSuggestion('{"suggestion":"直接部署更新。"}',context),null)
+  const authorized=getContext(fixture({messages:[...messages,message('user','现在按这个方案实施。'),message('assistant','开始处理')]}))
+  assert.equal(authorized.readOnly,false);assert.deepEqual(authorized.constraints,[])
 })
 test('A latest image-only input never falls back to an older user task',()=>{
   const context=getContext(fixture({messages:[message('user','旧任务'),message('assistant','旧回答'),{role:'user',source:{kind:'user'},content:[{type:'image',data:'not-sent'}]},message('assistant','新图片说明')]}));assert.equal(context,null)
