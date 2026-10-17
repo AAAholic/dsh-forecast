@@ -20,6 +20,7 @@ async function setup(t, overrides = {}) {
     buildPrompt: () => ({ system: 'Predict one short plain-text next input.', input: 'User and assistant text.' }),
     normalizeSuggestion: text => typeof text === 'string' && text.trim() ? text.trim() : null,
     infer: (...args) => { calls++; return pending.promise }, enabled: () => enabled,
+    ownerWaitMs: 60,
     ...overrides })
   await engine.loaded
   t.after(async () => { await engine.close(); await rm(dir, { recursive: true, force: true }) })
@@ -112,6 +113,7 @@ test('reload cannot repeat a reserved request after process loss; high-water nev
   // Simulate a process loss with the last persisted state still pending.
   await writeFile(f.ledgerPath, reserved, { mode: 0o600 })
   const second = new PredictionEngine({ ledgerPath: f.ledgerPath, getContext: () => completed(),
+    ownerWaitMs: 60,
     buildPrompt: () => ({ system: '', input: '' }), normalizeSuggestion: text => text,
     infer: () => { throw new Error('must not call') } })
   await second.loaded
