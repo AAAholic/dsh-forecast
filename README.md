@@ -50,11 +50,13 @@ v0.1.2 使用随进程退出自动释放的本机独占租约，修复旧文件�
 
 ## 兼容与安装
 
-v0.1.2 适配基线为 DSH 官方运行时 **0.2.1-rc.2**，有效兼容范围声明在顶层 `engines.dsh`。本次已核对安装宿主的 bundle、Session 与模型调用源码，并完成离线策略、互斥、持久化和客户端回归；模型控制通过同一次 `prepareCall` 捕获的能力选择，避免热更新期间混用不同 adapter。客户端用于 Web 界面及使用该界面的桌面壳。后续宿主版本需要重新核对接口，声明范围不等于逐版本实机验收。
+v0.1.3 适配基线为 DSH 官方运行时 **0.2.1-rc.2**，有效兼容范围声明在顶层 `engines.dsh`。已核对安装宿主的 bundle、Session 与模型调用源码，并完成离线策略、互斥、持久化和客户端回归；模型控制通过同一次 `prepareCall` 捕获的能力选择，避免热更新期间混用不同 adapter。客户端用于 Web 界面及使用该界面的桌面壳。后续宿主版本需要重新核对接口，声明范围不等于逐版本实机验收。
+
+v0.1.3 修复 Claude 皮肤重绘输入框时的候选错位、字号差异和多行裁切（[#2](https://github.com/AAAholic/dsh-forecast/issues/2)）。候选跟随真实输入段落的布局，并在皮肤切换或窗口变化后重新对齐；无需在皮肤侧写特例。真实 Chromium 回归已覆盖布局及 Tab 交互，Windows DSH 原生窗口与系统输入法尚待实机复核。
 
 | 宿主 | 适配范围与验收状态 |
 | --- | --- |
-| Mac Apple Silicon 桌面 | 旧版在 0.2.0-rc.2 完成真实生成与交互验收；v0.1.2 的 0.2.1-rc.2 真实模型生成与原生交互待验收 |
+| Mac Apple Silicon 桌面 | 旧版在 0.2.0-rc.2 完成真实生成与交互验收；v0.1.3 的 0.2.1-rc.2 真实模型生成与原生交互待验收 |
 | Mac Intel 桌面 | 官方存在 Intel 版本；使用同一 JS 插件，设置 Intel CI 检查，尚无 Intel 桌面实机验收 |
 | Windows x64 桌面 | 使用同一 JS 插件，设置 Windows CI 检查，尚无 Windows 桌面实机验收 |
 | Mac/Windows 的 `dsh web` | 同一 Web 客户端；Mac 上已真实启动并验证加载与开关，模型生成因 Web profile 缺少 API 凭据未完成；Windows Web 实机待验收 |
@@ -75,6 +77,16 @@ npm run build
 npm test
 npm run check
 ```
+
+复现输入框布局回归时，另准备 Playwright 与 Chromium（不属于插件运行时依赖）：
+
+```sh
+npm install --no-save playwright
+npx playwright install chromium
+npm run test:browser
+```
+
+可用 `DSH_CHROME_PATH` 指定已有 Chromium/Chrome 可执行文件；已有独立 Playwright 安装可通过 `DSH_PLAYWRIGHT_MODULES` 指向其 `node_modules`。`node scripts/test-browser.mjs --output /absolute/path/to/evidence` 保存定量结果与截图。测试只使用本机夹具和固定候选，不访问账户或调用模型。
 
 `build` 生成 `lib/client.js`；`test` 运行策略、预算和客户端交互测试；`check` 检查客户端产物是否与源码一致。发布包包含 `lib/`、`cordis.patch.yml`、此说明和许可证。
 
@@ -105,14 +117,14 @@ npm run check
 
 ### 官方 CLI 的 Web profile
 
-在源码目录完成构建后执行 `npm pack`，得到 `dsh-forecast-0.1.2.tgz`。然后运行：
+在源码目录完成构建后执行 `npm pack`，得到 `dsh-forecast-0.1.3.tgz`。然后运行：
 
 ```sh
-dsh plugin --profile web add "/absolute/path/to/dsh-forecast-0.1.2.tgz"
+dsh plugin --profile web add "/absolute/path/to/dsh-forecast-0.1.3.tgz"
 dsh web
 ```
 
-Windows PowerShell 中将第一行的路径替换为例如 `"C:\Users\you\Downloads\dsh-forecast-0.1.2.tgz"`；后续命令相同。官方插件管理命令安装依赖并自动登记 bundle。使用已构建 tarball 可避免目录软链接缺少依赖的问题。若系统找不到 `dsh`，可先通过 DSH 桌面应用的“管理 dsh 命令”安装官方命令入口，无需另装一套插件运行时。
+Windows PowerShell 中将第一行的路径替换为例如 `"C:\Users\you\Downloads\dsh-forecast-0.1.3.tgz"`；后续命令相同。官方插件管理命令安装依赖并自动登记 bundle。使用已构建 tarball 可避免目录软链接缺少依赖的问题。若系统找不到 `dsh`，可先通过 DSH 桌面应用的“管理 dsh 命令”安装官方命令入口，无需另装一套插件运行时。
 
 Web profile 与桌面 profile 分开安装和配置。请在 Web 的模型页面配置可用服务商及凭据，并使用 `dsh web` 输出的本机登录链接访问；桌面账号模型可用，不代表 Web profile 的 API 模型已有凭据。替换已安装文件后完整重启宿主，以加载新的客户端产物。
 
