@@ -1,0 +1,21 @@
+/* Host InputBar rules and dsh-claude-style 0.16.3 inline rules reproduced in
+ * https://github.com/AAAholic/dsh-forecast/issues/2 (author's attached fixture).
+ * Keep these independent from Forecast's implementation; these are test inputs.
+ * Fixture frame styling is deliberately separate from the host selectors. */
+:root{--dsw-font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;--dsw-alias-label-caption:#8a8a8a;--dsw-alias-border-l1:#ddd;--dsw-specific-input-major:#fff;--dsw-alias-state-business-primary:#4d6bfe;--dsh-composer-text-max-height:180px}
+body{font:16px/1.6 system-ui,sans-serif;background:#faf9f5;margin:0;padding:24px;color:#222}
+#frame{width:560px;margin:20px}
+[data-composer-card]{font-size:16px}
+.RlGAzG_scroll{max-height:var(--dsh-composer-text-max-height);margin-right:4px;overflow-y:auto}
+.RlGAzG_grow{position:relative}
+.RlGAzG_input{box-sizing:border-box;min-height:36px;font-family:var(--dsw-font-family);font-size:inherit;line-height:inherit;white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;color:#222;caret-color:var(--dsw-alias-state-business-primary);outline:none;padding:4px 8px 0 14px}
+.RlGAzG_input p{margin:0}
+.RlGAzG_placeholder{color:var(--dsw-alias-label-caption);white-space:nowrap;text-overflow:ellipsis;pointer-events:none;user-select:none;position:absolute;inset:4px 8px auto 14px;overflow:hidden}
+/* Hero-specific rule verified against the published dsh-claude-style 0.16.3
+ * lib/client.js. This rule is absent from the issue author's inline fixture. */
+body.skin[data-dsh-claude-style][data-dsh-claude-composer-active] :is([data-dsh-claude-part~=composer-hero],[data-phase=hero]) [data-composer-input]{min-height:86px}
+body.skin[data-dsh-claude-style][data-dsh-claude-composer-active] [data-composer-card]{font-size:15px;border-radius:18px;border:1px solid var(--dsw-alias-border-l1);position:relative;z-index:2;gap:8px;padding-bottom:2px;min-height:0;height:auto}
+body.skin[data-dsh-claude-style][data-dsh-claude-composer-active] [data-composer-card][data-composer-variant=inline] [data-input-scroll]{background:#fff;border:1px solid var(--dsw-alias-border-l1);border-radius:14px;min-height:38px;height:auto;max-height:180px;box-sizing:border-box;display:block;width:100%;overflow-y:auto;overflow-x:hidden;padding:7px 36px 7px 14px;margin:0;position:relative;z-index:2;cursor:text}
+body.skin[data-dsh-claude-style][data-dsh-claude-composer-active] [data-composer-card][data-composer-variant=inline] [data-input-scroll] [data-dsh-claude-part~=input-grow]{width:100%;min-height:24px;position:relative;display:block;box-sizing:border-box;overflow-x:hidden}
+body.skin[data-dsh-claude-style][data-dsh-claude-composer-active] [data-composer-card][data-composer-variant=inline] [data-composer-input]{min-height:24px;height:auto;line-height:24px;padding:0;font-size:14px;width:100%;box-sizing:border-box;cursor:text;outline:none;white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;overflow-x:hidden}
+body.skin[data-dsh-claude-style][data-dsh-claude-composer-active] [data-composer-card][data-composer-variant=inline] [data-composer-placeholder]{line-height:24px;height:24px;position:absolute;top:0;left:0;right:0;box-sizing:border-box;font-size:14px;color:var(--dsw-alias-label-caption);white-space:nowrap;text-overflow:ellipsis;overflow:hidden;pointer-events:none;user-select:none}
